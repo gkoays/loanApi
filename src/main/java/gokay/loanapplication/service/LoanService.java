@@ -189,7 +189,7 @@ public class LoanService {
 		loan.setNumberOfInstallment(loanDto.getNumberOfInstallment());
 		loan.setPaid(false);
 		
-		LocalDateTime firstDayOfNextMonth = now.minusMonths(1)  // minusMonths(1) plusMonths(1)
+		LocalDateTime firstDayOfNextMonth = now.plusMonths(1)  // minusMonths(1) plusMonths(1)
                 .with(TemporalAdjusters.firstDayOfMonth());
 		
 		
@@ -251,11 +251,4 @@ public class LoanService {
 		else
 			return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
 	}
-
-	
-
-	
-	
-	
-
 }
