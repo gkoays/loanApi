@@ -1,5 +1,6 @@
 package gokay.loanapplication.utils;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -14,6 +15,18 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class SecurityConfig {
+	
+	@Value("${loan.api.admin.username}")
+    private String adminUsername;
+	
+	@Value("${loan.api.admin.password}")
+    private String adminPass;
+	
+	@Value("${loan.api.customer.username}")
+    private String customerUsername;
+	
+	@Value("${loan.api.customer.password}")
+    private String customerPass;
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -33,17 +46,12 @@ public class SecurityConfig {
 
 	@Bean
 	public UserDetailsService userDetailsService() {
-		UserDetails user1 = User.builder().username("user1").password(passwordEncoder().encode("customerpass"))
+		UserDetails user1 = User.builder().username(customerUsername).password(passwordEncoder().encode(customerPass))
 				.roles("CUSTOMER").build();
-		UserDetails user2 = User.builder().username("user2").password(passwordEncoder().encode("customerpass"))
-				.roles("CUSTOMER").build();
-		UserDetails user3 = User.builder().username("user3").password(passwordEncoder().encode("customerpass"))
-				.roles("CUSTOMER").build();
-		UserDetails admin1 = User.builder().username("admin1").password(passwordEncoder().encode("adminpass"))
+		UserDetails admin1 = User.builder().username(adminUsername).password(passwordEncoder().encode(adminPass))
 				.roles("ADMIN").build();
-		UserDetails admin2 = User.builder().username("admin2").password(passwordEncoder().encode("adminpass"))
-				.roles("ADMIN").build();
-		return new InMemoryUserDetailsManager(user1, user2, user3, admin1, admin2);
+
+		return new InMemoryUserDetailsManager(user1, admin1);
 	}
 
 	@Bean
