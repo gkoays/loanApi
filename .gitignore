@@ -32,3 +32,4 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+ReadMe.txt
