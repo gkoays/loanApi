@@ -22,7 +22,9 @@ public class SecurityConfig {
 				.cors(cors -> cors.disable())
 				.authorizeHttpRequests(req -> req.requestMatchers("/public/api/*").permitAll()
 						.requestMatchers("/h2-console/**").permitAll()
-						.anyRequest().hasRole("ADMIN"))
+						.requestMatchers("/loan/api/admin/all/customers").hasRole("ADMIN")
+						.anyRequest().authenticated()
+						)
 				.httpBasic(Customizer.withDefaults())
 				.headers(hed -> hed.frameOptions().disable());
 
@@ -31,11 +33,17 @@ public class SecurityConfig {
 
 	@Bean
 	public UserDetailsService userDetailsService() {
-		UserDetails user = User.builder().username("customer").password(passwordEncoder().encode("customerpass"))
+		UserDetails user1 = User.builder().username("user1").password(passwordEncoder().encode("customerpass"))
 				.roles("CUSTOMER").build();
-		UserDetails admin = User.builder().username("admin").password(passwordEncoder().encode("adminpass"))
+		UserDetails user2 = User.builder().username("user2").password(passwordEncoder().encode("customerpass"))
+				.roles("CUSTOMER").build();
+		UserDetails user3 = User.builder().username("user3").password(passwordEncoder().encode("customerpass"))
+				.roles("CUSTOMER").build();
+		UserDetails admin1 = User.builder().username("admin1").password(passwordEncoder().encode("adminpass"))
 				.roles("ADMIN").build();
-		return new InMemoryUserDetailsManager(user, admin);
+		UserDetails admin2 = User.builder().username("admin2").password(passwordEncoder().encode("adminpass"))
+				.roles("ADMIN").build();
+		return new InMemoryUserDetailsManager(user1, user2, user3, admin1, admin2);
 	}
 
 	@Bean

@@ -33,6 +33,7 @@ public class LoanService {
 	private static final Logger logger     = LogManager.getLogger(LoanService.class);
 	
 	private final float interestRate = 0.2f;
+	private final float discountRate = 0.001f;
 	
 	@Autowired
 	LoanRepository loanRepository;
@@ -108,34 +109,50 @@ public class LoanService {
 	@Transactional
 	public ResponseEntity<String> payLoan(Integer loanId, Float sentAmount) {
 		List<LoanInstallment> loanInstallments = loanRepository.findUnpaidLoanInstallmentsByLoanId(loanId);
+		if(loanInstallments != null && !loanInstallments.isEmpty()) {
+			LocalDateTime now = LocalDateTime.now();
+
+	        Collections.sort(loanInstallments, Comparator.comparing(LoanInstallment::getDueDate));
+
+//	        int limitInstallmentNumber = 3;  // (can be changed to 3 months at a time to check the general work of application.)
+	        Float tmpSentAmount = sentAmount;
+	        int paidInstallmentsCount = 0;
+	        for (LoanInstallment installment : loanInstallments) {
+	        	Float amount = installment.getAmount();
+	            if (tmpSentAmount <= installment.getAmount() || isMoreThanThreeMonthsAfter(now, installment.getDueDate())) {
+//	        	if (tmpSentAmount <= amount || limitInstallmentNumber == 0) {
+	                break; 
+	            }
+	            else {
+	            	// bonus 2
+	            	long days = Math.abs(ChronoUnit.DAYS.between(installment.getDueDate(), now));
+	            	if(installment.getDueDate().isAfter(now)) {
+	            		amount = amount - (amount * discountRate * days);
+	            	}
+	            	if(now.isAfter(installment.getDueDate())) {
+	            		amount = amount + (amount * discountRate * days);
+	            	}
+	            	
+	            	installment.setPaid(true);
+	            	installment.setPaidAmount(amount);
+	            	installment.setPaymentDate(now);
+	            }
+//	            limitInstallmentNumber--;
+	            tmpSentAmount = tmpSentAmount - installment.getAmount();
+	            paidInstallmentsCount++;
+	        }
+	         
+	        boolean loanPaid = isLoanPaid(loanId);
+
+			return new ResponseEntity<>("Number of paid installments: " + paidInstallmentsCount 
+					+ "\n Total amount spent: " +  (sentAmount - tmpSentAmount)
+					+ "\n Is load paid totally?: " + loanPaid, HttpStatus.OK);
+		}
+		else {
+			return new ResponseEntity<>("Loan is not found. id: " + loanId , HttpStatus.BAD_REQUEST);
+		}
 		
-		LocalDateTime now = LocalDateTime.now();
-
-        Collections.sort(loanInstallments, Comparator.comparing(LoanInstallment::getDueDate));
-
-//        int limitInstallmentNumber = 3;  // (can be changed to 3 months at a time to check the general work of application.)
-        Float tmpSentAmount = sentAmount;
-        int paidInstallmentsCount = 0;
-        for (LoanInstallment installment : loanInstallments) {
-            if (tmpSentAmount <= installment.getAmount() || isMoreThanThreeMonthsAfter(now, installment.getDueDate())) {
-//        	if (tmpSentAmount <= installment.getAmount() || limitInstallmentNumber == 0) {
-                break; 
-            }
-            else {
-            	installment.setPaid(true);
-            	installment.setPaidAmount(installment.getAmount());
-            	installment.setPaymentDate(now);
-            }
-//            limitInstallmentNumber--;
-            tmpSentAmount = tmpSentAmount - installment.getAmount();
-            paidInstallmentsCount++;
-        }
-         
-        boolean loanPaid = isLoanPaid(loanId);
-
-		return new ResponseEntity<>("Number of paid installments: " + paidInstallmentsCount 
-				+ "\n Total amount spent: " +  (sentAmount - tmpSentAmount)
-				+ "\n Is load paid totally?: " + loanPaid, HttpStatus.OK);
+		
 	}
 	
 	
@@ -172,7 +189,7 @@ public class LoanService {
 		loan.setNumberOfInstallment(loanDto.getNumberOfInstallment());
 		loan.setPaid(false);
 		
-		LocalDateTime firstDayOfNextMonth = now.plusMonths(1)  // minusMonths(1) plusMonths(1)
+		LocalDateTime firstDayOfNextMonth = now.minusMonths(1)  // minusMonths(1) plusMonths(1)
                 .with(TemporalAdjusters.firstDayOfMonth());
 		
 		
@@ -225,6 +242,14 @@ public class LoanService {
 	
 	private Float calculateInstallmentAmount(Float totalLoanAmount, Integer numberOfInstallment) {
 		return totalLoanAmount / numberOfInstallment ;
+	}
+
+	public ResponseEntity<List<Customer>> listAllCustomers() {
+		List<Customer> all = loanRepository.findAll();
+		if(all != null && !all.isEmpty())
+			return new ResponseEntity<>(all, HttpStatus.OK);
+		else
+			return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
 	}
 
 	

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import gokay.loanapplication.dto.CustomerDto;
+import gokay.loanapplication.model.Customer;
 import gokay.loanapplication.model.Loan;
 import gokay.loanapplication.model.LoanInstallment;
 import gokay.loanapplication.service.LoanService;
@@ -42,6 +43,11 @@ public class EndpointController {
 	@PostMapping("/pay/loan")
     public ResponseEntity<String> payLoan(@RequestParam Integer loanId, @RequestParam Float sentAmount){
         return loanService.payLoan(loanId, sentAmount);
+    }
+	
+	@GetMapping("/admin/all/customers")
+    public ResponseEntity<List<Customer>> listAllCustomers(){
+        return loanService.listAllCustomers();
     }
 
 

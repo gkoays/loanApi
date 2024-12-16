@@ -17,6 +17,8 @@ public interface LoanRepository extends CrudRepository<Customer, Long> {
 
 	Customer findById(int id);
 	
+	List<Customer> findAll();
+	
 	@Query("SELECT l FROM Loan l WHERE l.customer.id = :customerId")
     List<Loan> findLoansByCustomerId(int customerId);
 	
