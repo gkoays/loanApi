@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -32,8 +33,17 @@ public class LoanService {
 	
 	private static final Logger logger     = LogManager.getLogger(LoanService.class);
 	
-	private final float interestRate = 0.2f;
-	private final float discountRate = 0.001f;
+//	private final float interestRate = 0.2f;
+//	private final float discountRate = 0.001f;
+	
+	@Value("${loan.api.credit.limit}")
+    private Float creditLimit;
+	
+	@Value("${loan.api.discount.rate}")
+    private Float discountRate;
+	
+	@Value("${loan.api.interest.rate}")
+    private Float interestRate;
 	
 	@Autowired
 	LoanRepository loanRepository;
@@ -68,11 +78,12 @@ public class LoanService {
 			customer.setId(customerDto.getId());
 			customer.setName(customerDto.getName());
 			customer.setSurname(customerDto.getSurname());
+			customer.setCreditLimit(creditLimit);
 		}
 		
 		if(!checkCreditLimit(customer.getCreditLimit(), loanDto.getLoanAmount()))
 			return new ResponseEntity<>("Remaning credit limit of the customer: " + customerDto.getName() + " is " + customer.getCreditLimit() 
-			+ " It cannot be lower than the loan amount " + loanDto.getLoanAmount(), HttpStatus.BAD_REQUEST);
+			+ " It cannot be lower than the loan amount *(1 + interest rate): " + (loanDto.getLoanAmount() * (1 + interestRate)), HttpStatus.BAD_REQUEST);
 		
 		// okay to get loan
 		calculateAndSaveLoanInfo(customer, loanDto);
@@ -230,7 +241,8 @@ public class LoanService {
 	}
 	
 	private boolean checkCreditLimit(Float creditLimit, Float loanAmount) {
-		if(creditLimit < loanAmount) {
+		Float totalLoanAmount = calculateTotalLoanAmount(loanAmount);
+		if(creditLimit < totalLoanAmount) {
 			return false;
 		}
 		return true;
